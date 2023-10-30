@@ -4,6 +4,10 @@ public class DroolTest {
     int ask;
     int answer;
 
+    public int getAsk() {
+        return ask;
+    }
+
     public void setAsk(int ask) {
         this.ask = ask;
     }

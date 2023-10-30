@@ -1,13 +1,21 @@
 package org.example;
 
+import org.drools.kiesession.rulebase.InternalKnowledgeBase;
+import org.drools.kiesession.rulebase.KnowledgeBaseFactory;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
 import org.kie.api.builder.KieRepository;
 import org.kie.api.builder.ReleaseId;
+import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
+import org.kie.internal.builder.KnowledgeBuilder;
+import org.kie.internal.builder.KnowledgeBuilderError;
+import org.kie.internal.builder.KnowledgeBuilderErrors;
+import org.kie.internal.builder.KnowledgeBuilderFactory;
 import org.kie.internal.io.ResourceFactory;
+import org.kie.internal.runtime.StatefulKnowledgeSession;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
@@ -25,8 +33,8 @@ import java.util.concurrent.CompletionException;
 
 public class Main {
     private static final String accessToken;
-    private static KieServices kieServices = KieServices.Factory.get();
-    private static KieSession kieSession = getKieSession();
+//    private static KieServices kieServices = KieServices.Factory.get();
+//    private static KieSession kieSession = getKieSession();
 
     static {
         try {
@@ -85,34 +93,52 @@ public class Main {
         }
     }
 
-    private static KieFileSystem getKieFileSystem() {
-        KieFileSystem kieFileSystem = kieServices.newKieFileSystem();
-        List<String> rules = Arrays.asList("org/example/test");
-        for (String rule : rules) {
-            kieFileSystem.write(ResourceFactory.newClassPathResource(rule));
+//    private static KieFileSystem getKieFileSystem() {
+//        KieFileSystem kieFileSystem = kieServices.newKieFileSystem();
+//        List<String> rules = Arrays.asList("org/example/test");
+//        for (String rule : rules) {
+//            kieFileSystem.write(ResourceFactory.newClassPathResource(rule));
+//        }
+//        return kieFileSystem;
+//    }
+//
+//    public static KieSession getKieSession() {
+//        KieBuilder kb = kieServices.newKieBuilder(getKieFileSystem());
+//        kb.buildAll();
+//
+//        KieRepository kieRepository = kieServices.getRepository();
+//        ReleaseId krDefaultReleaseId = kieRepository.getDefaultReleaseId();
+//        KieContainer kieContainer = kieServices.newKieContainer(krDefaultReleaseId);
+//
+//        return kieContainer.newKieSession();
+//    }
+    private static InternalKnowledgeBase readKnowledgeBase() throws Exception {
+        KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
+        kbuilder.add(ResourceFactory.newClassPathResource("test.drl"), ResourceType.DRL);
+        KnowledgeBuilderErrors errors = kbuilder.getErrors();
+
+        if (errors.size() > 0) {
+            for (KnowledgeBuilderError error: errors) {
+                System.err.println(error);
+            }
+            throw new IllegalArgumentException("Could not parse knowledge.");
         }
-        return kieFileSystem;
+        InternalKnowledgeBase kbase = KnowledgeBaseFactory.newKnowledgeBase();
+        kbase.addPackages(kbuilder.getKnowledgePackages());
+        return kbase;
     }
 
-    public static KieSession getKieSession() {
-        KieBuilder kb = kieServices.newKieBuilder(getKieFileSystem());
-        kb.buildAll();
+    public static void main(String[] args) throws Exception {
+        InternalKnowledgeBase kbase = readKnowledgeBase();
+        KieSession ksession = kbase.newKieSession();
 
-        KieRepository kieRepository = kieServices.getRepository();
-        ReleaseId krDefaultReleaseId = kieRepository.getDefaultReleaseId();
-        KieContainer kieContainer = kieServices.newKieContainer(krDefaultReleaseId);
-
-        return kieContainer.newKieSession();
-    }
-
-    public static void main(String[] args) {
 
         getRecommendations_Sync();
         DroolTest test = new DroolTest();
         test.setAnswer(0);
         test.setAsk(10);
-        kieSession.insert(test);
-        kieSession.fireAllRules();
+        ksession.insert(test);
+        ksession.fireAllRules();
         System.out.println(test.answer);
 
 //        getRecommendations_Async();

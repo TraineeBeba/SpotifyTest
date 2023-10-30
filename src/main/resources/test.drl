@@ -1,0 +1,22 @@
+
+import org.example.DroolTest;
+
+dialect "java"
+rule "isisi"
+    when
+    then
+    System.out.println("asdasdasdasdasdasdasd");
+end
+rule "Hello world"
+    when
+        item: DroolTest (item.getAsk()>1)
+    then
+        item.setAnswer(10);
+end
+
+rule "Hello world2"
+    when
+        item: DroolTest (item.getAsk()<=1)
+    then
+        item.setAnswer(20);
+end
