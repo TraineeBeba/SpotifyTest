@@ -1,0 +1,19 @@
+
+
+import org.example.DroolTest;
+
+dialect "java"
+
+rule "Hello world"
+    when
+        item: DroolTest (ask>1)
+    then
+        item.setAnswer(10);
+end
+
+rule "Hello world"
+    when
+        item: DroolTest (ask<=1)
+    then
+        item.setAnswer(20);
+end
